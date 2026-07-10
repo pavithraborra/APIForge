@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: apiforge-server
+    ports:
+      - '5000:5000'
+    environment:
+      - PORT=5000
+      - MONGO_URI=mongodb://mongodb:27017/apiforge
+      - JWT_SECRET=apiforge_super_secret_dev_key
+      - JWT_EXPIRES_IN=7d
+      - CLIENT_URL=http://localhost:3000
+      - NODE_ENV=production
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - apiforge-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/api/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: apiforge-client
+    ports:
+      - '3000:80'
+    depends_on:
+      - server
+    networks:
+      - apiforge-network
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:6.0
+    container_name: apiforge-mongodb
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - apiforge-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  apiforge-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
