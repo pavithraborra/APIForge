@@ -9,39 +9,62 @@ const Activity = require('../models/Activity');
 const Environment = require('../models/Environment');
 const { users, workspaces, collections, apiRequests } = require('./seedData');
 
+// Support both Render (MONGODB_URI) and local dev (MONGO_URI)
+const MONGO_CONNECTION = process.env.MONGODB_URI || process.env.MONGO_URI;
+
+if (!MONGO_CONNECTION) {
+  console.error('\u274C No MongoDB URI found. Set MONGODB_URI or MONGO_URI in your .env file.');
+  process.exit(1);
+}
+
 const seedDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('MongoDB Connected for Seeding');
+    await mongoose.connect(MONGO_CONNECTION);
+    const dbName = mongoose.connection.db.databaseName;
+    console.log(`\u2705 MongoDB Connected: ${mongoose.connection.host} / ${dbName}`);
 
-    // Clear existing data
-    await User.deleteMany();
-    await Workspace.deleteMany();
-    await Collection.deleteMany();
-    await ApiRequest.deleteMany();
-    await Activity.deleteMany();
-    await Environment.deleteMany();
-    console.log('Existing data cleared');
+    // ─── SAFE CLEANUP: only remove previously seeded demo accounts ───────────
+    // We identify seeded users by their email addresses so real user accounts
+    // that were created in production are NEVER touched.
+    const seededEmails = users.map(u => u.email);
+    const existingSeededUsers = await User.find({ email: { $in: seededEmails } });
+    const seededUserIds = existingSeededUsers.map(u => u._id);
 
-    // Insert Users
+    if (seededUserIds.length > 0) {
+      // Remove workspaces owned by seeded users
+      const seededWorkspaces = await Workspace.find({ owner: { $in: seededUserIds } });
+      const seededWorkspaceIds = seededWorkspaces.map(w => w._id);
+
+      if (seededWorkspaceIds.length > 0) {
+        await Collection.deleteMany({ workspace: { $in: seededWorkspaceIds } });
+        await ApiRequest.deleteMany({ workspaceId: { $in: seededWorkspaceIds } });
+        await Environment.deleteMany({ workspace: { $in: seededWorkspaceIds } });
+        await Activity.deleteMany({ workspace: { $in: seededWorkspaceIds } });
+        await Workspace.deleteMany({ _id: { $in: seededWorkspaceIds } });
+      }
+      await User.deleteMany({ email: { $in: seededEmails } });
+      console.log('\uD83D\uDDD1\uFE0F  Removed existing demo/seeded data (real production data preserved)');
+    } else {
+      console.log('\u2139\uFE0F  No previous seed data found — fresh seed');
+    }
+
+    // ─── INSERT USERS ─────────────────────────────────────────────────────────
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash('password123', salt);
-    
     const usersToInsert = users.map(user => ({
       ...user,
       password: hashedPassword
     }));
     await User.insertMany(usersToInsert);
-    console.log(`Inserted ${users.length} users`);
+    console.log(`\u2705 Inserted ${users.length} demo users`);
 
-    // Insert Workspaces
+    // ─── INSERT WORKSPACES ────────────────────────────────────────────────────
     const workspacesToInsert = workspaces.map(ws => {
-      // Add random members to workspace
       const members = [{ user: ws.owner, role: 'Owner' }];
       const numMembers = Math.floor(Math.random() * 5) + 2;
       for (let i = 0; i < numMembers; i++) {
         const randomUser = users[Math.floor(Math.random() * users.length)]._id;
-        if (!members.find(m => m.user === randomUser)) {
+        if (!members.find(m => m.user.toString() === randomUser.toString())) {
           const roles = ['Admin', 'Developer', 'Viewer'];
           members.push({ user: randomUser, role: roles[Math.floor(Math.random() * roles.length)] });
         }
@@ -49,17 +72,17 @@ const seedDB = async () => {
       return { ...ws, members };
     });
     await Workspace.insertMany(workspacesToInsert);
-    console.log(`Inserted ${workspaces.length} workspaces`);
+    console.log(`\u2705 Inserted ${workspaces.length} workspaces`);
 
-    // Insert Collections
+    // ─── INSERT COLLECTIONS ───────────────────────────────────────────────────
     await Collection.insertMany(collections);
-    console.log(`Inserted ${collections.length} collections`);
+    console.log(`\u2705 Inserted ${collections.length} collections`);
 
-    // Insert Requests
+    // ─── INSERT REQUESTS ──────────────────────────────────────────────────────
     await ApiRequest.insertMany(apiRequests);
-    console.log(`Inserted ${apiRequests.length} requests`);
+    console.log(`\u2705 Inserted ${apiRequests.length} API requests`);
 
-    // Insert Environments
+    // ─── INSERT ENVIRONMENTS ──────────────────────────────────────────────────
     const envs = workspaces.map(ws => ({
       name: 'Production',
       workspace: ws._id,
@@ -71,15 +94,16 @@ const seedDB = async () => {
       createdBy: ws.owner
     }));
     await Environment.insertMany(envs);
-    console.log(`Inserted ${envs.length} environments`);
+    console.log(`\u2705 Inserted ${envs.length} environments`);
 
-    // Insert Activities (randomized over last 6 months)
+    // ─── INSERT ACTIVITY LOGS ─────────────────────────────────────────────────
     const activities = [];
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    
     apiRequests.forEach(req => {
-      const date = new Date(sixMonthsAgo.getTime() + Math.random() * (new Date().getTime() - sixMonthsAgo.getTime()));
+      const date = new Date(
+        sixMonthsAgo.getTime() + Math.random() * (Date.now() - sixMonthsAgo.getTime())
+      );
       activities.push({
         user: req.createdBy,
         workspace: req.workspaceId,
@@ -92,12 +116,13 @@ const seedDB = async () => {
       });
     });
     await Activity.insertMany(activities);
-    console.log(`Inserted ${activities.length} activity logs`);
+    console.log(`\u2705 Inserted ${activities.length} activity logs`);
 
-    console.log('Seeding Complete! Use email: sarah.chen@example.com / password: password123 to login as Owner.');
-    process.exit();
+    console.log('\n\uD83C\uDF89 Seeding complete!');
+    console.log('   Login: sarah.chen@example.com / password123  (Owner role)');
+    process.exit(0);
   } catch (error) {
-    console.error('Error seeding database:', error);
+    console.error('\u274C Seed error:', error.message || error);
     process.exit(1);
   }
 };
