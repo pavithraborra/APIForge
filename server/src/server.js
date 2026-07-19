@@ -9,10 +9,16 @@ connectDB();
 
 const server = http.createServer(app);
 
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'https://api-forge-itut.vercel.app',
+  'http://localhost:3000'
+].filter(Boolean);
+
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true,
   },
