@@ -8,7 +8,7 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#E78F81',
+          DEFAULT: 'var(--primary)',
           light: '#F6B89E',
           dark: '#D4776A',
           50: '#FFF5F3',
@@ -23,7 +23,7 @@ module.exports = {
           900: '#6A2118',
         },
         secondary: {
-          DEFAULT: '#F6B89E',
+          DEFAULT: 'var(--secondary)',
           light: '#FFD8BE',
           dark: '#E8A188',
         },
@@ -34,33 +34,35 @@ module.exports = {
         },
         highlight: '#F5E6CC',
         surface: {
-          DEFAULT: '#FFF8F3',
+          DEFAULT: 'var(--background)',
           secondary: '#FFF2EA',
-          card: '#FFFFFF',
+          card: 'var(--card)',
           hover: '#FFF1E8',
         },
+        hover: '#FFF1E8',
+        borders: 'var(--border)',
         border: {
-          DEFAULT: '#F1D6C8',
+          DEFAULT: 'var(--border)',
           light: '#F7E4DA',
         },
         success: {
-          DEFAULT: '#88C9A1',
+          DEFAULT: 'var(--success)',
           light: '#A8DDB8',
           dark: '#6BAF87',
         },
         warning: {
-          DEFAULT: '#F2B880',
+          DEFAULT: 'var(--warning)',
           light: '#F7CE9E',
           dark: '#E5A060',
         },
         danger: {
-          DEFAULT: '#E97A7A',
+          DEFAULT: 'var(--danger)',
           light: '#F09A9A',
           dark: '#D45A5A',
         },
         text: {
-          primary: '#2F2A28',
-          secondary: '#706864',
+          primary: 'var(--primary-text)',
+          secondary: 'var(--secondary-text)',
           muted: '#A0958D',
         },
       },

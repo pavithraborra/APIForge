@@ -4,6 +4,39 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
+:root {
+  --background: #FFF8F3;
+  --card: #FFFFFF;
+  --primary: #F4B183;
+  --secondary: #F7D6BF;
+  --accent-lavender: #D8C3F2;
+  --mint: #B8E6D2;
+  --gold: #FFD89C;
+  --border: #F0DCCB;
+  --primary-text: #2D2D2D;
+  --secondary-text: #666666;
+  --success: #58C27D;
+  --danger: #E65A5A;
+  --warning: #F4B942;
+}
+
+/* Dark/System layout override variables */
+.theme-dark {
+  --background: #1E1B1A;
+  --card: #2B2523;
+  --primary: #E78F81;
+  --secondary: #3E3532;
+  --accent-lavender: #9A7BC4;
+  --mint: #5BAE89;
+  --gold: #C99E55;
+  --border: #3E3532;
+  --primary-text: #FDF9F7;
+  --secondary-text: #B5A8A4;
+  --success: #4CA86D;
+  --danger: #D45A5A;
+  --warning: #D9A036;
+}
+
 @layer base {
   * {
     margin: 0;
@@ -19,9 +52,10 @@
 
   body {
     font-family: 'Inter', sans-serif;
-    background-color: #FFF8F3;
-    color: #2F2A28;
+    background-color: var(--background);
+    color: var(--primary-text);
     line-height: 1.6;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {

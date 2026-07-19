@@ -5,13 +5,33 @@ import { WorkspaceProvider } from './context/WorkspaceContext';
 import { SocketProvider } from './context/SocketContext';
 import { ToastProvider } from './components/ui';
 import { useAuth } from './hooks/useAuth';
-
 import Layout from './components/layout/Layout';
 import Landing from './pages/Landing';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
+
+// ─── Global Theme Bootstrap ──────────────────────────────────────────────────
+// Runs synchronously at module parse time — no flash-of-wrong-theme.
+/* eslint-disable no-extra-semi */
+;(function initTheme() {
+  try {
+    const saved = localStorage.getItem('appTheme') || 'peach';
+    const root = document.documentElement;
+    if (saved === 'dark') {
+      root.classList.add('theme-dark');
+    } else if (saved === 'system') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) root.classList.add('theme-dark');
+      else root.classList.remove('theme-dark');
+    } else {
+      root.classList.remove('theme-dark');
+    }
+  } catch (_) {}
+})();
+/* eslint-enable no-extra-semi */
+// ─────────────────────────────────────────────────────────────────────────────
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Workspaces = lazy(() => import('./pages/workspaces/Workspaces'));

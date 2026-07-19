@@ -45,7 +45,13 @@ const ApiBuilder = () => {
     setLoadingSidebar(true);
     try {
       const res = await collectionService.getCollections(activeWorkspace._id);
-      setCollections(res.data || []);
+      // collectionService returns response.data from axios,
+      // which is the server's JSON: { success, count, data: [...] }
+      // So we need res.data (the array) or res (if already unwrapped)
+      const collectionsArray = Array.isArray(res) ? res
+        : Array.isArray(res?.data) ? res.data
+        : [];
+      setCollections(collectionsArray);
     } catch (err) {
       console.error(err);
       addToast({ title: 'Error', message: 'Failed to load collections', type: 'error' });
@@ -83,7 +89,7 @@ const ApiBuilder = () => {
     try {
       await collectionService.createCollection({
         name: newCollectionName,
-        workspace: activeWorkspace._id
+        workspaceId: activeWorkspace._id
       });
       addToast({ title: 'Collection Created', message: 'Successfully added new collection', type: 'success' });
       setIsNewCollectionOpen(false);

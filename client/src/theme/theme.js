@@ -1,18 +1,18 @@
 // src/theme/theme.js
 export const colors = {
-  background: "#FFF8F3",
-  card: "#FFFFFF",
-  primary: "#F4B183",
-  secondary: "#F7D6BF",
-  accentLavender: "#D8C3F2",
-  mint: "#B8E6D2",
-  gold: "#FFD89C",
-  border: "#F0DCCB",
-  primaryText: "#2D2D2D",
-  secondaryText: "#666666",
-  success: "#58C27D",
-  danger: "#E65A5A",
-  warning: "#F4B942",
+  background: "var(--background)",
+  card: "var(--card)",
+  primary: "var(--primary)",
+  secondary: "var(--secondary)",
+  accentLavender: "var(--accent-lavender)",
+  mint: "var(--mint)",
+  gold: "var(--gold)",
+  border: "var(--border)",
+  primaryText: "var(--primary-text)",
+  secondaryText: "var(--secondary-text)",
+  success: "var(--success)",
+  danger: "var(--danger)",
+  warning: "var(--warning)",
 };
 
 export const spacing = {
