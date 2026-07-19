@@ -143,7 +143,7 @@ const ApiBuilder = () => {
       // Auto save before executing to match what's in backend database
       await requestService.updateRequest(selectedRequestId, requestData);
       
-      const res = await requestService.executeRequest(selectedRequestId);
+      const res = await requestService.executeRequest(selectedRequestId, requestData);
       const executionResult = res.data;
       setExecutionResponse(executionResult);
       
@@ -153,7 +153,11 @@ const ApiBuilder = () => {
         response: executionResult
       }));
       
-      addToast({ title: 'Execution Complete', message: `Status: ${executionResult.statusCode}`, type: 'success' });
+      if (executionResult.statusCode === 0) {
+        addToast({ title: 'Execution Failed', message: executionResult.responseBody || 'Network Error', type: 'error' });
+      } else {
+        addToast({ title: 'Execution Complete', message: `Status: ${executionResult.statusCode}`, type: 'success' });
+      }
     } catch (err) {
       console.error(err);
       addToast({ title: 'Execution Failed', message: err.response?.data?.message || 'Failed to run endpoint request', type: 'error' });

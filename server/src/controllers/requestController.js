@@ -166,10 +166,18 @@ exports.executeRequest = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Request not found' });
     }
 
+    // Support executing latest configuration directly from client payload if provided
+    const method = req.body.method || apiRequest.method;
+    const url = req.body.url || apiRequest.url;
+    const headers = req.body.headers || apiRequest.headers;
+    const queryParams = req.body.queryParams || apiRequest.queryParams;
+    const auth = req.body.auth || apiRequest.auth;
+    const body = req.body.body || apiRequest.body;
+
     // Construct Axios config
     const axiosConfig = {
-      method: apiRequest.method.toLowerCase(),
-      url: apiRequest.url,
+      method: method.toLowerCase(),
+      url: url,
       headers: {},
       params: {},
       data: undefined,
@@ -178,38 +186,38 @@ exports.executeRequest = async (req, res) => {
     };
 
     // Build headers
-    if (apiRequest.headers && apiRequest.headers.length > 0) {
-      apiRequest.headers.filter(h => h.isActive && h.key).forEach(h => {
+    if (headers && headers.length > 0) {
+      headers.filter(h => h.isActive && h.key).forEach(h => {
         axiosConfig.headers[h.key] = h.value;
       });
     }
 
     // Auth
-    if (apiRequest.auth && apiRequest.auth.type === 'bearer' && apiRequest.auth.token) {
-      axiosConfig.headers['Authorization'] = `Bearer ${apiRequest.auth.token}`;
-    } else if (apiRequest.auth && apiRequest.auth.type === 'basic' && apiRequest.auth.username) {
-      const token = Buffer.from(`${apiRequest.auth.username}:${apiRequest.auth.password || ''}`).toString('base64');
+    if (auth && auth.type === 'bearer' && auth.token) {
+      axiosConfig.headers['Authorization'] = `Bearer ${auth.token}`;
+    } else if (auth && auth.type === 'basic' && auth.username) {
+      const token = Buffer.from(`${auth.username}:${auth.password || ''}`).toString('base64');
       axiosConfig.headers['Authorization'] = `Basic ${token}`;
     }
 
     // Query params
-    if (apiRequest.queryParams && apiRequest.queryParams.length > 0) {
-      apiRequest.queryParams.filter(p => p.isActive && p.key).forEach(p => {
+    if (queryParams && queryParams.length > 0) {
+      queryParams.filter(p => p.isActive && p.key).forEach(p => {
         axiosConfig.params[p.key] = p.value;
       });
     }
 
     // Body
-    if (apiRequest.body && apiRequest.body.type !== 'none' && apiRequest.body.content) {
-      if (apiRequest.body.type === 'json') {
+    if (body && body.type !== 'none' && body.content) {
+      if (body.type === 'json') {
         try {
-          axiosConfig.data = JSON.parse(apiRequest.body.content);
+          axiosConfig.data = JSON.parse(body.content);
           axiosConfig.headers['Content-Type'] = 'application/json';
         } catch (e) {
-          axiosConfig.data = apiRequest.body.content;
+          axiosConfig.data = body.content;
         }
       } else {
-        axiosConfig.data = apiRequest.body.content;
+        axiosConfig.data = body.content;
       }
     }
 
@@ -239,6 +247,7 @@ exports.executeRequest = async (req, res) => {
       };
     } catch (execError) {
       const endTime = Date.now();
+      console.error('Axios Execution Error:', execError.message, execError.stack);
       responseData = {
         statusCode: execError.response ? execError.response.status : 0,
         statusText: execError.response ? execError.response.statusText : 'Network Error',
@@ -255,20 +264,22 @@ exports.executeRequest = async (req, res) => {
     apiRequest.response = responseData;
     await apiRequest.save();
 
-    // Save to history
+    // Save to history with complete response headers/body fields populated
     try {
       await RequestHistory.create({
         request: apiRequest._id,
         workspace: apiRequest.workspaceId,
         executedBy: req.user._id,
-        method: apiRequest.method,
-        url: apiRequest.url,
+        method: method,
+        url: url,
         statusCode: responseData.statusCode,
         statusText: responseData.statusText,
         responseTime: responseData.responseTime,
         responseSize: responseData.responseSize,
         requestHeaders: Object.entries(axiosConfig.headers).map(([k, v]) => ({ key: k, value: v })),
-        requestBody: axiosConfig.data ? (typeof axiosConfig.data === 'object' ? JSON.stringify(axiosConfig.data) : axiosConfig.data) : ''
+        requestBody: axiosConfig.data ? (typeof axiosConfig.data === 'object' ? JSON.stringify(axiosConfig.data) : axiosConfig.data) : '',
+        responseHeaders: responseData.responseHeaders,
+        responseBody: responseData.responseBody
       });
     } catch (histErr) {
       console.error('Failed to save history:', histErr);
@@ -283,7 +294,7 @@ exports.executeRequest = async (req, res) => {
         entityType: 'request',
         entityId: apiRequest._id,
         entityName: apiRequest.name,
-        details: `${apiRequest.method} ${apiRequest.url} - ${responseData.statusCode}`
+        details: `${method} ${url} - ${responseData.statusCode}`
       });
     } catch (actErr) {
       console.error('Failed to save activity:', actErr);

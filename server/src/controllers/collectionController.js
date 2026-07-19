@@ -43,7 +43,16 @@ exports.createCollection = async (req, res) => {
 exports.getCollections = async (req, res) => {
   try {
     const collections = await Collection.find({ workspace: req.params.workspaceId }).sort({ order: 1, createdAt: 1 });
-    res.status(200).json({ success: true, count: collections.length, data: collections });
+    
+    // For each collection, fetch its requests and attach them to the response
+    const collectionsWithRequests = await Promise.all(collections.map(async (col) => {
+      const requests = await ApiRequest.find({ collectionId: col._id }).sort({ createdAt: 1 });
+      const colObj = col.toObject();
+      colObj.requests = requests;
+      return colObj;
+    }));
+
+    res.status(200).json({ success: true, count: collectionsWithRequests.length, data: collectionsWithRequests });
   } catch (error) {
     console.error('Get collections error:', error);
     return res.status(500).json({ success: false, message: 'Server error fetching collections' });
