@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HiSearch, HiFolder, HiOutlineCollection, HiLightningBolt } from 'react-icons/hi';
+import { HiSearch, HiFolder, HiLightningBolt } from 'react-icons/hi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWorkspace } from '../../context/WorkspaceContext';
 
