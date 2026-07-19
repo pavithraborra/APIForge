@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Hexagonal base -->
+  <polygon points="60,5 95,22.5 95,57.5 60,75 25,57.5 25,22.5" fill="#F4B183"/>
+  <!-- Inner network nodes -->
+  <circle cx="60" cy="40" r="6" fill="#D8C3F2"/>
+  <circle cx="70" cy="55" r="6" fill="#B8E6D2"/>
+  <circle cx="50" cy="55" r="6" fill="#FFD89C"/>
+  <!-- Connecting lines -->
+  <line x1="60" y1="46" x2="70" y2="49" stroke="#2D2D2D" stroke-width="2"/>
+  <line x1="60" y1="46" x2="50" y2="49" stroke="#2D2D2D" stroke-width="2"/>
+  <line x1="70" y1="61" x2="50" y2="61" stroke="#2D2D2D" stroke-width="2"/>
+  <!-- Cloud element -->
+  <path d="M40 80C35 78 30 73 30 66C30 58 36 52 44 52C45 44 52 38 60 38C68 38 75 44 76 52C84 52 90 58 90 66C90 73 85 78 80 80H40Z" fill="#FFFFFF" opacity="0.7"/>
+</svg>
